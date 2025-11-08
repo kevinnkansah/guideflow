@@ -6,9 +6,13 @@ import "tldraw/tldraw.css";
 import { HotkeysProvider } from "react-hotkeys-hook";
 import {
   DefaultToolbar,
+  DefaultToolbarContent,
   type TLUiComponents,
   type TLUiOverrides,
   Tldraw,
+  TldrawUiButton,
+  TldrawUiIcon,
+  useEditor,
 } from "tldraw";
 import { C1SelectionUI } from "./components/C1SelectionUI";
 import { PromptInput } from "./components/PromptInput";
@@ -16,11 +20,43 @@ import { FOCUS_PROMPT_EVENT } from "./events";
 import { shapeUtils } from "./shapeUtils";
 
 const components: Partial<TLUiComponents> = {
-  Toolbar: () => (
-    <div style={{ position: "fixed", top: 8 }}>
-      <DefaultToolbar />
-    </div>
-  ),
+  Toolbar: (props) => {
+    const editor = useEditor();
+    const isDarkMode = editor.user.getIsDarkMode();
+
+    return (
+      <div
+        style={{
+          position: "fixed",
+          top: 8,
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <DefaultToolbar {...props}>
+          <DefaultToolbarContent />
+        </DefaultToolbar>
+        <TldrawUiButton
+          onClick={() => {
+            const isDark = editor.user.getIsDarkMode();
+            editor.user.updateUserPreferences({
+              colorScheme: isDark ? "light" : "dark",
+            });
+          }}
+          title="Toggle Dark Mode"
+          type="icon"
+        >
+          <TldrawUiIcon
+            icon={isDarkMode ? "sun-icon" : "moon-icon"}
+            label="Toggle Dark Mode"
+          />
+        </TldrawUiButton>
+      </div>
+    );
+  },
 };
 
 const overrides: TLUiOverrides = {
@@ -37,6 +73,13 @@ const overrides: TLUiOverrides = {
         },
       },
     };
+  },
+};
+
+const assetUrls = {
+  icons: {
+    "sun-icon": "/sun.svg",
+    "moon-icon": "/moon.svg",
   },
 };
 
@@ -67,6 +110,7 @@ const Page = () => {
         style={{ position: "fixed", inset: 0 }}
       >
         <Tldraw
+          assetUrls={assetUrls}
           components={components}
           onMount={(editor) => {
             // Set initial color scheme based on editor settings
