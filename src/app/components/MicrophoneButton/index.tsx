@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { IconButton, ThemeProvider } from "@crayonai/react-ui";
+import { IconButton } from "@crayonai/react-ui";
 import { Loader2, Mic, MicOff } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   isAudioRecordingSupported,
   transcribeAudio,
@@ -8,14 +8,16 @@ import {
 
 type MicrophoneButtonProps = {
   onTranscriptionComplete: (text: string) => void;
-  isDarkMode: boolean;
   disabled?: boolean;
+  onRecordingStart?: () => void;
+  onRecordingStop?: () => void;
 };
 
 export const MicrophoneButton = ({
   onTranscriptionComplete,
-  isDarkMode,
   disabled = false,
+  onRecordingStart,
+  onRecordingStop,
 }: MicrophoneButtonProps) => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -89,6 +91,7 @@ export const MicrophoneButton = ({
 
     try {
       setIsRecording(true);
+      onRecordingStart?.();
       isRecordingRef.current = true;
       setError(null);
       audioChunksRef.current = [];
@@ -131,6 +134,7 @@ export const MicrophoneButton = ({
         // Process transcription after a short delay to ensure cleanup
         setTimeout(() => {
           setIsRecording(false);
+          onRecordingStop?.();
           isRecordingRef.current = false;
 
           // Only transcribe if we have actual audio data
@@ -146,6 +150,7 @@ export const MicrophoneButton = ({
       mediaRecorder.start(100); // Collect data more frequently for better responsiveness
     } catch (err) {
       setIsRecording(false);
+      onRecordingStop?.();
       isRecordingRef.current = false;
       const errorMessage =
         err instanceof Error ? err.message : "Failed to start recording";
@@ -212,57 +217,58 @@ export const MicrophoneButton = ({
 
   if (!isSupported) {
     return (
-      <ThemeProvider mode={isDarkMode ? "dark" : "light"}>
-        <IconButton
-          disabled
-          icon={<MicOff size={20} />}
-          size="medium"
-          title="Microphone not supported in this browser"
-          variant="secondary"
-        />
-      </ThemeProvider>
+      <IconButton
+        disabled
+        icon={<MicOff size={20} />}
+        size="medium"
+        title="Microphone not supported in this browser"
+        variant="secondary"
+      />
     );
   }
 
   return (
-    <ThemeProvider mode={isDarkMode ? "dark" : "light"}>
-      <div className="relative flex items-center gap-2">
-        <IconButton
-          type="button"
-          disabled={disabled || isTranscribing}
-          icon={
-            isTranscribing ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : isRecording ? (
-              <MicOff size={20} />
-            ) : (
-              <Mic size={20} />
-            )
-          }
-          onClick={handleClick}
-          size="medium"
-          title={
-            isRecording
-              ? `Recording... ${formatTime(recordingTime)}`
-              : isTranscribing
-                ? "Transcribing..."
-                : "Click to record"
-          }
-          variant="secondary"
-        />
+    <div className="relative flex items-center gap-2">
+      <IconButton
+        className="!rounded-full !border-0"
+        style={{
+          backgroundColor: "var(--container-fill-hover, #374151) !important",
+          color: "var(--primary-text, #d1d5db) !important",
+          border: "none !important",
+          borderRadius: "50% !important",
+        }}
+        disabled={disabled || isTranscribing}
+        icon={
+          isTranscribing ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : isRecording ? (
+            <MicOff size={20} />
+          ) : (
+            <Mic size={20} />
+          )
+        }
+        onClick={handleClick}
+        size="medium"
+        title={
+          isRecording
+            ? `Recording... ${formatTime(recordingTime)}`
+            : isTranscribing
+              ? "Transcribing..."
+              : "Click to record"
+        }
+      />
 
-        {isRecording && (
-          <div className="-top-8 -translate-x-1/2 absolute left-1/2 transform animate-pulse whitespace-nowrap rounded bg-red-500 px-2 py-1 text-white text-xs">
-            {formatTime(recordingTime)}
-          </div>
-        )}
+      {isRecording && (
+        <div className="-top-8 -translate-x-1/2 absolute left-1/2 transform animate-pulse whitespace-nowrap rounded bg-red-500 px-2 py-1 text-white text-xs">
+          {formatTime(recordingTime)}
+        </div>
+      )}
 
-        {error && (
-          <div className="-top-16 -translate-x-1/2 absolute left-1/2 max-w-48 transform rounded bg-red-500 px-3 py-2 text-center text-white text-xs">
-            {error}
-          </div>
-        )}
-      </div>
-    </ThemeProvider>
+      {error && (
+        <div className="-top-16 -translate-x-1/2 absolute left-1/2 max-w-48 transform rounded bg-red-500 px-3 py-2 text-center text-white text-xs">
+          {error}
+        </div>
+      )}
+    </div>
   );
 };

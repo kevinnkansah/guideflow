@@ -1,10 +1,3 @@
-import Groq from "groq-sdk";
-
-const groq = new Groq({
-  apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
-
 export interface TranscriptionOptions {
   language?: string;
   prompt?: string;
@@ -19,7 +12,7 @@ export interface TranscriptionResult {
 }
 
 /**
- * Transcribes audio blob to text using Groq's Whisper model
+ * Transcribes audio blob to text using server-side API route
  */
 export const transcribeAudio = async (
   audioBlob: Blob,
@@ -31,17 +24,24 @@ export const transcribeAudio = async (
       type: audioBlob.type,
     });
 
-    const transcription = await groq.audio.transcriptions.create({
-      model: "whisper-large-v3-turbo",
-      file: audioFile,
-      language: options.language || "en",
-      prompt: options.prompt,
-      temperature: options.temperature || 0,
-      response_format: options.responseFormat || "json",
+    // Create form data to send to API route
+    const formData = new FormData();
+    formData.append("audio", audioFile);
+
+    // Send to server-side API route
+    const response = await fetch("/api/transcribe", {
+      method: "POST",
+      body: formData,
     });
 
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Transcription failed");
+    }
+
+    const result = await response.json();
     return {
-      text: transcription.text,
+      text: result.text,
     };
   } catch (error) {
     console.error("Error transcribing audio:", error);

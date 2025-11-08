@@ -1,13 +1,15 @@
 "use client";
 
-import { IconButton, ThemeProvider } from "@crayonai/react-ui";
+import { IconButton } from "@crayonai/react-ui";
 import { PulsingBorder } from "@paper-design/shaders-react";
 import { clsx } from "clsx";
 import { ArrowUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { track, useEditor } from "tldraw";
+import { track, useEditor, useValue } from "tldraw";
 import { MicrophoneButton } from "@/app/components/MicrophoneButton";
 import { createC1ComponentShape, isMac } from "@/app/utils";
+import { Kbd, KbdGroup } from "@/components/ui/kbd";
+import { LiveWaveform } from "@/components/ui/live-waveform";
 
 interface PromptInputProps {
   focusEventName: string;
@@ -15,10 +17,12 @@ interface PromptInputProps {
 
 export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
   const editor = useEditor();
-  const isDarkMode = editor.user.getIsDarkMode();
-  // Ensure we always have a valid theme mode for ThemeProvider
-  const themeMode = isDarkMode === true ? "dark" : "light";
+  const isDarkMode = useValue("isDarkMode", () => editor.user.getIsDarkMode(), [
+    editor,
+  ]);
+
   const [isFocused, setIsFocused] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [prompt, setPrompt] = useState("");
   const showMacKeybinds = isMac();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,18 +79,18 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
         transform: isCanvasZeroState
           ? "translate(-50%, -50%)"
           : "translateX(-50%)",
-        width: isFocused ? "50%" : "400px",
+        width: isFocused ? "50%" : "500px",
       }}
     >
       {!isFocused && (
         <div
-          className="-inset-[3px] pointer-events-none absolute overflow-hidden rounded-2xl"
+          className="-inset-[3px] pointer-events-none absolute overflow-hidden rounded-4xl"
           style={{ filter: "blur(4px)" }}
         >
           <PulsingBorder
             bloom={1.5}
-            colorBack="#ffffff"
-            colors={["#0dc1fd", "#87f500", "#2effb6cc"]}
+            colorBack="#3dc8ff"
+            colors={["#0dc1fd", "#1477f0", "#00f2ff7d"]}
             intensity={1}
             offsetX={0}
             offsetY={0}
@@ -107,7 +111,7 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
       )}
       <form
         className={clsx(
-          "interactive-el relative flex min-h-[60px] items-center gap-xs rounded-2xl border-none bg-container py-m pr-l pl-xl text-md text-primary"
+          "interactive-el relative flex min-h-[70px] items-center gap-xs rounded-4xl border-none bg-container py-m pr-l pl-xl text-md text-primary"
         )}
         onSubmit={(e) => {
           e.preventDefault();
@@ -116,9 +120,22 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
           inputRef.current?.blur();
         }}
       >
-        <ThemeProvider mode={themeMode}>
+        {isRecording ? (
+          <LiveWaveform
+            active={isRecording}
+            barColor={isDarkMode ? "#f9fafb" : "#1f2937"}
+            barGap={1}
+            barWidth={2}
+            fftSize={2048}
+            height={40}
+            mode="static"
+            sensitivity={1.2}
+            smoothingTimeConstant={0.7}
+            updateRate={16}
+          />
+        ) : (
           <input
-            className="relative z-10 flex-1"
+            className="relative z-10 flex-1 bg-transparent font-semibold text-lg text-primary placeholder:text-secondary-text"
             name="prompt-input"
             onBlur={() => setIsFocused(false)}
             onBlurCapture={() => setIsFocused(false)}
@@ -129,35 +146,54 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
             type="text"
             value={prompt}
           />
-          {isFocused ? (
-            <div className="flex items-center gap-2">
-              <MicrophoneButton
-                isDarkMode={isDarkMode}
-                onTranscriptionComplete={handleTranscriptionComplete}
-              />
-              <IconButton
-                icon={<ArrowUp />}
-                onMouseDown={(e) => {
-                  // Prevent the input from losing focus when clicking the submit button
-                  e.preventDefault();
-                }}
-                size="medium"
-                type="submit"
-                variant="secondary"
-              />
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <MicrophoneButton
-                isDarkMode={isDarkMode}
-                onTranscriptionComplete={handleTranscriptionComplete}
-              />
-              <span className="text-xs opacity-30">
-                {showMacKeybinds ? "⌘ + K" : "Ctrl + K"}
-              </span>
-            </div>
-          )}
-        </ThemeProvider>
+        )}
+        {isFocused ? (
+          <div className="flex items-center gap-2">
+            <MicrophoneButton
+              onRecordingStart={() => setIsRecording(true)}
+              onRecordingStop={() => setIsRecording(false)}
+              onTranscriptionComplete={handleTranscriptionComplete}
+            />
+            <IconButton
+              className="!rounded-full !border-0"
+              icon={<ArrowUp />}
+              onMouseDown={(e) => {
+                // Prevent the input from losing focus when clicking the submit button
+                e.preventDefault();
+              }}
+              size="medium"
+              style={{
+                backgroundColor:
+                  "var(--container-fill-hover, #374151) !important",
+                color: "var(--primary-text, #d1d5db) !important",
+                border: "none !important",
+                borderRadius: "50% !important",
+              }}
+              type="submit"
+            />
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <MicrophoneButton
+              onRecordingStart={() => setIsRecording(true)}
+              onRecordingStop={() => setIsRecording(false)}
+              onTranscriptionComplete={handleTranscriptionComplete}
+            />
+            <span className="text-xs opacity-30">
+              {showMacKeybinds ? (
+                <KbdGroup>
+                  <Kbd>⌘</Kbd>
+                  <Kbd>K</Kbd>
+                </KbdGroup>
+              ) : (
+                <KbdGroup>
+                  <Kbd>Ctrl</Kbd>
+                  <Kbd>K</Kbd>
+                </KbdGroup>
+              )}
+            </span>
+          </div>
+        )}
       </form>
     </div>
   );
