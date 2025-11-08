@@ -26,11 +26,9 @@ export class MCPClient {
     }
 
     try {
-      logger.info("Connecting to CoinGecko MCP server...", "mcp-client");
+      logger.info("Connecting to Tavily MCP server...", "mcp-client");
       this.transport = new StreamableHTTPClientTransport(
-        new URL(
-          "https://mcp.tavily.com/mcp/?tavilyApiKey=tvl-dev-rce6o4q5CQ2u41x3JBF8sl3ZTaRZzeYd",
-        ),
+        new URL("https://mcp.tavily.com/mcp/?tavilyApiKey=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"),
       );
       await this.mcp.connect(this.transport);
       const toolsResult = await this.mcp.listTools();
