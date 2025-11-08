@@ -7,8 +7,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "C1 Canvas",
-  description: "Generative UI Canvas powered by Thesys C1",
+  title: "GuideFlow",
+  description: "We are future ready.",
 };
 
 export default function RootLayout({
