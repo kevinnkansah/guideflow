@@ -65,14 +65,15 @@ export function getOptimalShapePosition(
         h: shapeHeight,
       };
 
-      return existingBounds.some((bounds) => {
-        return !(
-          testBounds.x >= bounds.maxX + padding ||
-          testBounds.x + testBounds.w <= bounds.minX - padding ||
-          testBounds.y >= bounds.maxY + padding ||
-          testBounds.y + testBounds.h <= bounds.minY - padding
-        );
-      });
+      return existingBounds.some(
+        (bounds) =>
+          !(
+            testBounds.x >= bounds.maxX + padding ||
+            testBounds.x + testBounds.w <= bounds.minX - padding ||
+            testBounds.y >= bounds.maxY + padding ||
+            testBounds.y + testBounds.h <= bounds.minY - padding
+          )
+      );
     };
 
     // Try positions to the right of existing shapes first

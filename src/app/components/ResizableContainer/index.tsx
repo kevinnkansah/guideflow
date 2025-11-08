@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef, type PropsWithChildren } from "react";
-import { C1ComponentShape } from "@/app/shapes/C1ComponentShape";
+import { type PropsWithChildren, useLayoutEffect, useRef } from "react";
 import { track, useEditor } from "tldraw";
+import type { C1ComponentShape } from "@/app/shapes/C1ComponentShape";
 
 interface ResizableContainerProps {
   shape: C1ComponentShape;
@@ -16,9 +16,8 @@ export const ResizableContainer = track(
     const contentRef = useRef<HTMLDivElement>(null);
     const editor = useEditor();
 
-    const calculateShapeHeight = (contentContainer: HTMLDivElement) => {
-      return contentContainer.scrollHeight;
-    };
+    const calculateShapeHeight = (contentContainer: HTMLDivElement) =>
+      contentContainer.scrollHeight;
 
     useLayoutEffect(() => {
       if (!contentRef.current) return;
@@ -58,8 +57,8 @@ export const ResizableContainer = track(
 
     return (
       <div
-        ref={contentRef}
         className="flex flex-col gap-s"
+        ref={contentRef}
         style={{
           width: "100%",
           minHeight: "fit-content",

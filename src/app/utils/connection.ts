@@ -1,11 +1,10 @@
+import type { Editor, TLArrowShape } from "tldraw";
 import {
   createShapeId,
-  Vec,
   type TLArrowBinding,
   type TLShapeId,
+  Vec,
 } from "tldraw";
-
-import type { Editor, TLArrowShape } from "tldraw";
 
 export function createArrowBetweenShapes(
   editor: Editor,
@@ -48,7 +47,7 @@ export function createArrowBetweenShapes(
     .getShapePageTransform(endShapeId)
     .rotation();
 
-  if (!startShapePageBounds || !endShapePageBounds) return;
+  if (!(startShapePageBounds && endShapePageBounds)) return;
 
   const startTerminalPagePosition = Vec.Add(
     startShapePageBounds.point,
@@ -96,7 +95,7 @@ export function createArrowBetweenShapes(
           x: arrowPointInParentSpace.x - endTerminalPagePosition.x,
           y: arrowPointInParentSpace.x - endTerminalPagePosition.x,
         },
-        color: 'grey'
+        color: "grey",
       },
     });
 

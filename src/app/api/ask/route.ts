@@ -1,10 +1,10 @@
-import { NextRequest } from "next/server";
-import OpenAI from "openai";
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { transformStream } from "@crayonai/stream";
+import { makeC1Response } from "@thesysai/genui-sdk/server";
+import type { NextRequest } from "next/server";
+import OpenAI from "openai";
+import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { SYSTEM_PROMPT } from "./systemPrompt";
 import { getTools } from "./tools";
-import { makeC1Response } from "@thesysai/genui-sdk/server";
 
 const client = new OpenAI({
   baseURL: "https://api.thesys.dev/v1/embed",
@@ -50,12 +50,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Create tools with thinking state callback
-  const toolsWithThinking = await getTools((title: string, description: string) => {
-    c1Response.writeThinkItem({
-      title,
-      description,
-    });
-  });
+  const toolsWithThinking = await getTools(
+    (title: string, description: string) => {
+      c1Response.writeThinkItem({
+        title,
+        description,
+      });
+    }
+  );
 
   const llmStream = client.beta.chat.completions.runTools({
     model: "c1/anthropic/claude-sonnet-4/v-20250930",

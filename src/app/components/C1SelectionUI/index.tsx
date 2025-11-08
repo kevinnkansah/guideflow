@@ -1,13 +1,12 @@
 "use client";
 
-import { track, useEditor } from "tldraw";
-import { InputField } from "./InputField";
 import { useEffect, useState } from "react";
-import type { C1ComponentShape } from "../../shapes/C1ComponentShape";
-import { createArrowBetweenShapes } from "@/app/utils/connection";
-import { createShapeId } from "tldraw";
-import { extractC1ShapeContext } from "@/app/utils/shapeContext";
+import { createShapeId, track, useEditor } from "tldraw";
 import { makeApiCall } from "@/app/helpers/api";
+import { createArrowBetweenShapes } from "@/app/utils/connection";
+import { extractC1ShapeContext } from "@/app/utils/shapeContext";
+import type { C1ComponentShape } from "../../shapes/C1ComponentShape";
+import { InputField } from "./InputField";
 
 export const C1SelectionUI = track(() => {
   const editor = useEditor();
@@ -177,10 +176,10 @@ export const C1SelectionUI = track(() => {
     <>
       {showInputField ? (
         <InputField
+          onCancel={handleInputCancel}
+          onSubmit={handleInputSubmit}
           x={inputPosition.x}
           y={inputPosition.y}
-          onSubmit={handleInputSubmit}
-          onCancel={handleInputCancel}
         />
       ) : (
         // Plus button
@@ -194,11 +193,11 @@ export const C1SelectionUI = track(() => {
           }}
         >
           <button
+            className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-colors duration-200 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             onClick={handlePlusButtonClick}
-            className="w-6 h-6 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             title="Add connected component"
           >
-            <span className="text-xs font-bold leading-none">+</span>
+            <span className="font-bold text-xs leading-none">+</span>
           </button>
         </div>
       )}

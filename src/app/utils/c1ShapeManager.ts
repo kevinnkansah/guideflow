@@ -1,11 +1,11 @@
 import type { Editor, TLShapeId } from "tldraw";
 import { createShapeId } from "tldraw";
-import {
-  getOptimalShapePosition,
-  centerCameraOnShape,
-} from "./shapePositioning";
-import { extractC1ShapeContext } from "./shapeContext";
 import { makeApiCall } from "@/app/helpers/api";
+import { extractC1ShapeContext } from "./shapeContext";
+import {
+  centerCameraOnShape,
+  getOptimalShapePosition,
+} from "./shapePositioning";
 
 export interface C1ShapeCreationOptions {
   /** The search query/prompt for the shape */

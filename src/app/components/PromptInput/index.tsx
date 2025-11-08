@@ -1,9 +1,9 @@
-import { clsx } from "clsx";
-import { useState, useRef, useEffect } from "react";
-import { track, useEditor } from "tldraw";
-import { isMac, createC1ComponentShape } from "@/app/utils";
 import { IconButton, ThemeProvider } from "@crayonai/react-ui";
+import { clsx } from "clsx";
 import { ArrowUp } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { track, useEditor } from "tldraw";
+import { createC1ComponentShape, isMac } from "@/app/utils";
 
 interface PromptInputProps {
   focusEventName: string;
@@ -50,17 +50,15 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
     }
   };
 
-
-
   return (
     <form
       className={clsx(
-        "flex items-center fixed left-1/2 -translate-x-1/2 py-m pl-xl pr-l rounded-2xl border border-interactive-el text-md transition-all duration-300 gap-xs shadow-md min-h-[60px] ease-in-out bg-container text-primary",
+        "-translate-x-1/2 fixed left-1/2 flex min-h-[60px] items-center gap-xs rounded-2xl border border-interactive-el bg-container py-m pr-l pl-xl text-md text-primary shadow-md transition-all duration-300 ease-in-out",
         {
           "w-[400px]": !isFocused,
           "w-1/2": isFocused,
           // Position based on canvas state
-          "top-1/2 -translate-y-1/2": isCanvasZeroState,
+          "-translate-y-1/2 top-1/2": isCanvasZeroState,
           "bottom-4": !isCanvasZeroState,
         }
       )}
@@ -73,33 +71,33 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
     >
       <ThemeProvider mode={themeMode}>
         <input
-          name="prompt-input"
-          ref={inputRef}
-          type="text"
-          placeholder="Ask anything..."
           className="flex-1"
-          onFocus={() => setIsFocused(true)}
+          name="prompt-input"
           onBlur={() => setIsFocused(false)}
           onBlurCapture={() => setIsFocused(false)}
-          value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          placeholder="Ask anything..."
+          ref={inputRef}
+          type="text"
+          value={prompt}
         />
-         {isFocused ? (
-           <IconButton
-             variant="secondary"
-             icon={<ArrowUp />}
-             size="medium"
-             type="submit"
-             onMouseDown={(e) => {
-               // Prevent the input from losing focus when clicking the submit button
-               e.preventDefault();
-             }}
-           />
-         ) : (
-           <span className="text-xs opacity-30">
-             {showMacKeybinds ? "⌘ + K" : "Ctrl + K"}
-           </span>
-         )}
+        {isFocused ? (
+          <IconButton
+            icon={<ArrowUp />}
+            onMouseDown={(e) => {
+              // Prevent the input from losing focus when clicking the submit button
+              e.preventDefault();
+            }}
+            size="medium"
+            type="submit"
+            variant="secondary"
+          />
+        ) : (
+          <span className="text-xs opacity-30">
+            {showMacKeybinds ? "⌘ + K" : "Ctrl + K"}
+          </span>
+        )}
       </ThemeProvider>
     </form>
   );

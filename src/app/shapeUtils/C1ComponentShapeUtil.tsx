@@ -1,9 +1,9 @@
-import { BaseBoxShapeUtil, HTMLContainer, type TLResizeInfo } from "tldraw";
-import type { C1ComponentShape } from "../shapes/C1ComponentShape";
-import { ResizableContainer } from "../components/ResizableContainer";
 import { C1Component, ThemeProvider } from "@thesysai/genui-sdk";
-import { AiIcon } from "../components/AiIcon";
 import clsx from "clsx";
+import { BaseBoxShapeUtil, HTMLContainer, type TLResizeInfo } from "tldraw";
+import { AiIcon } from "../components/AiIcon";
+import { ResizableContainer } from "../components/ResizableContainer";
+import type { C1ComponentShape } from "../shapes/C1ComponentShape";
 
 export class C1ComponentShapeUtil extends BaseBoxShapeUtil<C1ComponentShape> {
   static override type = "c1-component" as const;
@@ -42,7 +42,7 @@ export class C1ComponentShapeUtil extends BaseBoxShapeUtil<C1ComponentShape> {
         <HTMLContainer>
           <div
             className={clsx(
-              "w-full h-full flex flex-col gap-1 items-center justify-center border border-[#7F56D917] outline-[#0000000F] bg-[#7F56D914] rounded-xl text-primary"
+              "flex h-full w-full flex-col items-center justify-center gap-1 rounded-xl border border-[#7F56D917] bg-[#7F56D914] text-primary outline-[#0000000F]"
             )}
           >
             <AiIcon />
@@ -60,17 +60,20 @@ export class C1ComponentShapeUtil extends BaseBoxShapeUtil<C1ComponentShape> {
           pointerEvents: "all",
         }}
       >
-        <ResizableContainer shape={shape} isStreaming={shape.props.isStreaming}>
+        <ResizableContainer
+          isStreaming={!!shape.props.isStreaming}
+          shape={shape}
+        >
           <ThemeProvider mode={themeMode}>
             {shape.props.prompt && (
-              <div className="py-xs px-m rounded-md bg-container border-default border w-fit max-w-full line-clamp-1 overflow-hidden min-h-[30px]">
+              <div className="line-clamp-1 min-h-[30px] w-fit max-w-full overflow-hidden rounded-md border border-default bg-container px-m py-xs">
                 {shape.props.prompt}
               </div>
             )}
             <C1Component
-              key={shape.id}
               c1Response={shape.props.c1Response}
-              isStreaming={shape.props.isStreaming || false}
+              isStreaming={!!shape.props.isStreaming}
+              key={shape.id}
             />
           </ThemeProvider>
         </ResizableContainer>
@@ -79,6 +82,6 @@ export class C1ComponentShapeUtil extends BaseBoxShapeUtil<C1ComponentShape> {
   };
 
   indicator(shape: C1ComponentShape) {
-    return <rect width={shape.props.w} height={shape.props.h} />;
+    return <rect height={shape.props.h} width={shape.props.w} />;
   }
 }

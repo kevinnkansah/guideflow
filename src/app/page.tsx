@@ -3,26 +3,24 @@
 import { useEffect } from "react";
 import "@crayonai/react-ui/styles/index.css";
 import "tldraw/tldraw.css";
+import { HotkeysProvider } from "react-hotkeys-hook";
 import {
   DefaultToolbar,
-  Tldraw,
   type TLUiComponents,
   type TLUiOverrides,
+  Tldraw,
 } from "tldraw";
-import { shapeUtils } from "./shapeUtils";
-import { PromptInput } from "./components/PromptInput";
 import { C1SelectionUI } from "./components/C1SelectionUI";
-import { HotkeysProvider } from "react-hotkeys-hook";
+import { PromptInput } from "./components/PromptInput";
 import { FOCUS_PROMPT_EVENT } from "./events";
+import { shapeUtils } from "./shapeUtils";
 
 const components: Partial<TLUiComponents> = {
-  Toolbar: () => {
-    return (
-      <div style={{ position: "fixed", top: 8 }}>
-        <DefaultToolbar />
-      </div>
-    );
-  },
+  Toolbar: () => (
+    <div style={{ position: "fixed", top: 8 }}>
+      <DefaultToolbar />
+    </div>
+  ),
 };
 
 const overrides: TLUiOverrides = {
@@ -69,9 +67,7 @@ const Page = () => {
         style={{ position: "fixed", inset: 0 }}
       >
         <Tldraw
-          shapeUtils={shapeUtils}
           components={components}
-          overrides={overrides}
           onMount={(editor) => {
             // Set initial color scheme based on editor settings
             const colorScheme = editor.user.getUserPreferences().colorScheme;
@@ -100,7 +96,9 @@ const Page = () => {
               }
             }
           }}
+          overrides={overrides}
           persistenceKey="c1-canvas"
+          shapeUtils={shapeUtils}
         >
           <PromptInput focusEventName={FOCUS_PROMPT_EVENT} />
           <C1SelectionUI />

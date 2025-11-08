@@ -8,11 +8,11 @@ export const GithubButton = () => {
 
   return (
     <Button
-      variant="primary"
+      className="fixed right-2 bottom-12"
       iconLeft={<Github />}
-      iconRight={<StarIcon fill="#eac54f" color="#eac54f" />}
-      className="fixed bottom-12 right-2"
+      iconRight={<StarIcon color="#eac54f" fill="#eac54f" />}
       onClick={handleClick}
+      variant="primary"
     >
       Github
     </Button>

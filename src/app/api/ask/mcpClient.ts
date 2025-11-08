@@ -28,7 +28,9 @@ export class MCPClient {
     try {
       logger.info("Connecting to Tavily MCP server", "mcp-client");
       this.transport = new StreamableHTTPClientTransport(
-        new URL("https://mcp.tavily.com/mcp/?tavilyApiKey=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"),
+        new URL(
+          "https://mcp.tavily.com/mcp/?tavilyApiKey=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"
+        )
       );
       await this.mcp.connect(this.transport);
       const toolsResult = await this.mcp.listTools();
@@ -48,7 +50,7 @@ export class MCPClient {
         `Connected with ${this.tools.length} tools: ${this.tools
           .map((t) => t.function.name)
           .join(", ")}`,
-        "mcp-client",
+        "mcp-client"
       );
     } catch (error) {
       logger.error("Failed to connect to MCP server", "mcp-client", error);
@@ -69,11 +71,7 @@ export class MCPClient {
       throw new Error("MCP client not connected. Call connect() first.");
     }
 
-    logger.info(
-      `Calling tool: ${name} with args`,
-      "mcp-client",
-      { args }
-    );
+    logger.info(`Calling tool: ${name} with args`, "mcp-client", { args });
     try {
       const result = await this.mcp.callTool({
         name,

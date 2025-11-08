@@ -37,42 +37,42 @@ export const InputField = ({ x, y, onSubmit, onCancel }: InputFieldProps) => {
       }}
     >
       <form
-        onSubmit={handleSubmit}
         className={clsx(
-          "flex items-center py-m pl-xl pr-l rounded-2xl border border-interactive-el text-md transition-all duration-300 gap-xs shadow-md min-h-[60px] w-[400px] bg-container text-primary"
+          "flex min-h-[60px] w-[400px] items-center gap-xs rounded-2xl border border-interactive-el bg-container py-m pr-l pl-xl text-md text-primary shadow-md transition-all duration-300"
         )}
         data-c1-input-area
+        onSubmit={handleSubmit}
       >
         <input
-          type="text"
-          value={value}
+          autoFocus
+          className="flex-1"
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Enter prompt..."
-          autoFocus
-          className="flex-1"
+          type="text"
+          value={value}
         />
         <IconButton
-          variant="secondary"
-          icon={<ArrowUp />}
-          size="medium"
-          type="submit"
           disabled={!value.trim()}
+          icon={<ArrowUp />}
           onMouseDown={(e) => {
             // Prevent the input from losing focus when clicking the submit button
             e.preventDefault();
           }}
+          size="medium"
+          type="submit"
+          variant="secondary"
         />
         <IconButton
-          variant="secondary"
           icon={<X />}
-          size="medium"
-          type="button"
           onClick={onCancel}
           onMouseDown={(e) => {
             // Prevent the input from losing focus when clicking the cancel button
             e.preventDefault();
           }}
+          size="medium"
+          type="button"
+          variant="secondary"
         />
       </form>
     </div>
