@@ -14,7 +14,6 @@ import { PromptInput } from "./components/PromptInput";
 import { C1SelectionUI } from "./components/C1SelectionUI";
 import { HotkeysProvider } from "react-hotkeys-hook";
 import { FOCUS_PROMPT_EVENT } from "./events";
-import { GithubButton } from "./components/GithubButton";
 
 const components: Partial<TLUiComponents> = {
   Toolbar: () => {
@@ -105,7 +104,6 @@ const Page = () => {
         >
           <PromptInput focusEventName={FOCUS_PROMPT_EVENT} />
           <C1SelectionUI />
-          <GithubButton />
         </Tldraw>
       </div>
     </HotkeysProvider>

@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import { transformStream } from "@crayonai/stream";
 import { SYSTEM_PROMPT } from "./systemPrompt";
-import { getImageSearchTool } from "./tools";
+import { getTools } from "./tools";
 import { makeC1Response } from "@thesysai/genui-sdk/server";
 
 const client = new OpenAI({
@@ -50,14 +50,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Create tools with thinking state callback
-  const toolsWithThinking = [
-    getImageSearchTool((title: string, description: string) => {
-      c1Response.writeThinkItem({
-        title,
-        description,
-      });
-    }),
-  ];
+  const toolsWithThinking = await getTools((title: string, description: string) => {
+    c1Response.writeThinkItem({
+      title,
+      description,
+    });
+  });
 
   const llmStream = await client.beta.chat.completions.runTools({
     model: "c1/anthropic/claude-sonnet-4/v-20250930",
