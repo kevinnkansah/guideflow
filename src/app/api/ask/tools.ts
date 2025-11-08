@@ -40,12 +40,12 @@ export function getImageSearchTool(
         }),
       ) as JSONSchema,
       function: async ({ altText }: { altText: string }) => {
-        logger.info(`🔍 Image Search Tool Called`, "tools", { altText });
+        logger.info(`Image Search Tool Called`, "tools", { altText });
         
         // Write thinking state when image search tool is called
         if (writeThinkItem) {
           writeThinkItem(
-            "🔍 Searching for images...",
+            "Searching for images...",
             `Finding the perfect image: "${altText}"`,
           );
         }
@@ -55,10 +55,10 @@ export function getImageSearchTool(
             size: "huge",
           });
           const imageUrl = results[0]?.url;
-          logger.info(`✅ Image Search Success`, "tools", { altText, imageUrl });
+          logger.info(`Image Search Success`, "tools", { altText, imageUrl });
           return imageUrl;
         } catch (error) {
-          logger.error(`❌ Image Search Failed`, "tools", { altText, error });
+          logger.error(`Image Search Failed`, "tools", { altText, error });
           throw error;
         }
       },
@@ -88,7 +88,7 @@ const toolConfigs: Record<string, ToolDisplayConfig> = {
   // Tavily MCP Tools
   tavily_search: {
     friendlyName: "Web Search",
-    description: "Search the web for real-time information",
+    description: "Search web for real-time information",
     category: "search"
   },
   tavily_extract: {
@@ -106,7 +106,6 @@ const toolConfigs: Record<string, ToolDisplayConfig> = {
     description: "Search for location-based information",
     category: "search"
   },
-
 };
 
 // Create MCP tool wrappers with enhanced logging and UX
@@ -129,13 +128,13 @@ function createMCPToolWrappers(
         parse: JSON.parse,
         parameters: (mcpTool.function.parameters || {}) as JSONSchema,
         function: async (args: Record<string, unknown>) => {
-          logger.info(`🔧 ${config.friendlyName} Tool Called: ${mcpTool.function.name}`, "tools", { args });
+          logger.info(`${config.friendlyName} Tool Called: ${mcpTool.function.name}`, "tools", { args });
           
           // Write thinking state when MCP tool is called
           if (writeThinkItem) {
             writeThinkItem(
-              `🔧 Using ${config.friendlyName}...`,
-              `${config.description}: ${JSON.stringify(args)}`,
+              `Using ${config.friendlyName}...`,
+              `${config.description}`,
             );
           }
 
@@ -151,10 +150,10 @@ function createMCPToolWrappers(
             
             // Parse result content to return actual data
             const parsedContent = JSON.parse(result.content);
-            logger.info(`✅ ${config.friendlyName} Success: ${mcpTool.function.name}`, "tools", { result: parsedContent });
+            logger.info(`${config.friendlyName} Success: ${mcpTool.function.name}`, "tools");
             return parsedContent;
           } catch (error) {
-            logger.error(`❌ ${config.friendlyName} Failed: ${mcpTool.function.name}`, "tools", error);
+            logger.error(`${config.friendlyName} Failed: ${mcpTool.function.name}`, "tools", error);
             throw error;
           }
         },
@@ -177,7 +176,7 @@ export async function getTools(
     const mcpToolWrappers = createMCPToolWrappers(mcpClient.tools, writeThinkItem);
     tools.push(...mcpToolWrappers);
     
-    logger.info(`🛠️ Tools Loaded: ${tools.length} tools available`, "tools", {
+    logger.info(`Tools Loaded: ${tools.length} tools available`, "tools", {
       tools: tools.map(t => t.function.name),
       mcpTools: mcpClient.getToolNames()
     });

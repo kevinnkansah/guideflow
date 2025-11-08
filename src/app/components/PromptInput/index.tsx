@@ -50,6 +50,8 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
     }
   };
 
+
+
   return (
     <form
       className={clsx(
@@ -82,22 +84,22 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
-        {isFocused ? (
-          <IconButton
-            variant="secondary"
-            icon={<ArrowUp />}
-            size="medium"
-            type="submit"
-            onMouseDown={(e) => {
-              // Prevent the input from losing focus when clicking the submit button
-              e.preventDefault();
-            }}
-          />
-        ) : (
-          <span className="text-xs opacity-30">
-            {showMacKeybinds ? "⌘ + K" : "Ctrl + K"}
-          </span>
-        )}
+         {isFocused ? (
+           <IconButton
+             variant="secondary"
+             icon={<ArrowUp />}
+             size="medium"
+             type="submit"
+             onMouseDown={(e) => {
+               // Prevent the input from losing focus when clicking the submit button
+               e.preventDefault();
+             }}
+           />
+         ) : (
+           <span className="text-xs opacity-30">
+             {showMacKeybinds ? "⌘ + K" : "Ctrl + K"}
+           </span>
+         )}
       </ThemeProvider>
     </form>
   );
