@@ -4,7 +4,7 @@ import { IconButton } from "@crayonai/react-ui";
 import { PulsingBorder } from "@paper-design/shaders-react";
 import { clsx } from "clsx";
 import { ArrowUp } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { track, useEditor, useValue } from "tldraw";
 import { MicrophoneButton } from "@/app/components/MicrophoneButton";
 import { createC1ComponentShape, isMac } from "@/app/utils";
@@ -26,9 +26,11 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
   const [prompt, setPrompt] = useState("");
   const [justTranscribed, setJustTranscribed] = useState(false);
   const [justSubmitted, setJustSubmitted] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const showMacKeybinds = isMac();
   const inputRef = useRef<HTMLInputElement>(null);
   const isCanvasZeroState = editor.getCurrentPageShapes().length === 0;
+  const flagTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Listen for the custom focus event from tldraw
   useEffect(() => {
@@ -45,36 +47,105 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
     };
   }, [focusEventName]);
 
-  const onInputSubmit = async (promptText: string) => {
-    setPrompt("");
-    setJustSubmitted(true);
-    try {
-      await createC1ComponentShape(editor, {
-        searchQuery: promptText,
-        width: 600,
-        height: 300,
-        centerCamera: true,
-        animationDuration: 200,
-      });
-    } catch (error) {
-      console.error("Failed to create C1 component shape:", error);
-    }
-    // Clear the flag after a short delay to prevent automatic microphone activation
-    setTimeout(() => setJustSubmitted(false), 1000);
-  };
+  // Handle mobile keyboard appearance
+  useEffect(() => {
+    const handleViewportChange = () => {
+      if (window.visualViewport) {
+        const viewport = window.visualViewport;
+        const heightDiff = window.innerHeight - viewport.height;
+        setKeyboardOffset(heightDiff > 150 ? heightDiff : 0); // Only adjust if significant height change
+      }
+    };
 
-  const handleTranscriptionComplete = (transcribedText: string) => {
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleViewportChange);
+      return () => {
+        window.visualViewport?.removeEventListener(
+          "resize",
+          handleViewportChange
+        );
+      };
+    }
+  }, []);
+
+  // Cleanup timeouts on unmount
+  useEffect(
+    () => () => {
+      if (flagTimeoutRef.current) {
+        clearTimeout(flagTimeoutRef.current);
+      }
+    },
+    []
+  );
+
+  const onInputSubmit = useCallback(
+    async (promptText: string) => {
+      // Validate input
+      const trimmedPrompt = promptText.trim();
+      if (!trimmedPrompt || trimmedPrompt.length > 1000) {
+        return; // Invalid input
+      }
+
+      setPrompt("");
+      setJustSubmitted(true);
+
+      // Clear any existing timeout
+      if (flagTimeoutRef.current) {
+        clearTimeout(flagTimeoutRef.current);
+      }
+
+      try {
+        await createC1ComponentShape(editor, {
+          searchQuery: trimmedPrompt,
+          width: 600,
+          height: 300,
+          centerCamera: true,
+          animationDuration: 200,
+        });
+      } catch (error) {
+        console.error("Failed to create C1 component shape:", error);
+        // Reset flag immediately on error to allow retry
+        setJustSubmitted(false);
+        return;
+      }
+
+      // Clear the flag after a short delay to prevent automatic microphone activation
+      flagTimeoutRef.current = setTimeout(() => {
+        setJustSubmitted(false);
+        flagTimeoutRef.current = null;
+      }, 1000);
+    },
+    [editor]
+  );
+
+  const handleTranscriptionComplete = useCallback((transcribedText: string) => {
+    // Validate transcription result
+    const trimmedText = transcribedText?.trim();
+    if (!trimmedText || trimmedText.length > 1000) {
+      return; // Invalid transcription
+    }
+
     // Only populate the input field, let user decide when to submit
-    setPrompt(transcribedText);
+    setPrompt(trimmedText);
     setJustTranscribed(true);
+
+    // Clear any existing timeout
+    if (flagTimeoutRef.current) {
+      clearTimeout(flagTimeoutRef.current);
+    }
+
     // Focus the input so user can easily edit or submit
     if (inputRef.current) {
       inputRef.current.focus();
       setIsFocused(true);
     }
+
     // Clear the flag after a short delay to prevent auto-submission
-    setTimeout(() => setJustTranscribed(false), 500);
-  };
+    flagTimeoutRef.current = setTimeout(() => {
+      setJustTranscribed(false);
+      flagTimeoutRef.current = null;
+    }, 500);
+  }, []);
 
   return (
     <div
@@ -83,11 +154,14 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
         position: "fixed",
         left: "50%",
         top: isCanvasZeroState ? "50%" : "auto",
-        bottom: isCanvasZeroState ? "auto" : "3rem",
+        bottom: isCanvasZeroState
+          ? "auto"
+          : `max(${3 + keyboardOffset / 16}rem, env(safe-area-inset-bottom) + 1rem)`,
         transform: isCanvasZeroState
           ? "translate(-50%, -50%)"
           : "translateX(-50%)",
-        width: isFocused ? "50%" : "500px",
+        width: isFocused ? "min(90vw, 800px)" : "min(90vw, 500px)",
+        maxWidth: "800px",
       }}
     >
       {!isFocused && (
@@ -119,7 +193,8 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
       )}
       <form
         className={clsx(
-          "interactive-el relative flex min-h-[70px] items-center gap-xs rounded-4xl border-none bg-container py-m pr-l pl-xl text-md text-primary"
+          "interactive-el relative flex min-h-[70px] items-center gap-2 rounded-4xl border-none bg-container py-m pr-l pl-xl text-md text-primary sm:gap-xs",
+          "touch-manipulation" // Optimize for touch on mobile
         )}
         onSubmit={(e) => {
           e.preventDefault();
@@ -149,7 +224,11 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
           />
         ) : (
           <input
-            className="relative z-10 flex-1 bg-transparent font-semibold text-lg text-primary placeholder:text-secondary-text"
+            autoCapitalize="sentences"
+            autoComplete="off"
+            autoCorrect="on"
+            className="relative z-10 flex-1 bg-transparent font-semibold text-base text-primary placeholder:text-secondary-text focus:outline-none sm:text-lg"
+            maxLength={1000}
             name="prompt-input"
             onBlur={() => setIsFocused(false)}
             onBlurCapture={() => setIsFocused(false)}
@@ -157,20 +236,21 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
             onFocus={() => setIsFocused(true)}
             placeholder="Ask anything..."
             ref={inputRef}
+            spellCheck="true"
             type="text"
             value={prompt}
           />
         )}
         {isFocused ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-2">
             <MicrophoneButton
+              justSubmitted={justSubmitted}
               onRecordingStart={() => setIsRecording(true)}
               onRecordingStop={() => setIsRecording(false)}
               onTranscriptionComplete={handleTranscriptionComplete}
-              justSubmitted={justSubmitted}
             />
             <IconButton
-              className="!rounded-full !border-0"
+              className="!rounded-full !border-0 min-h-[44px] min-w-[44px] sm:min-h-[40px] sm:min-w-[40px]"
               icon={<ArrowUp />}
               onMouseDown={(e) => {
                 // Prevent the input from losing focus when clicking the submit button
@@ -188,14 +268,14 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
             />
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-shrink-0 items-center gap-2 sm:gap-2">
             <MicrophoneButton
+              justSubmitted={justSubmitted}
               onRecordingStart={() => setIsRecording(true)}
               onRecordingStop={() => setIsRecording(false)}
               onTranscriptionComplete={handleTranscriptionComplete}
-              justSubmitted={justSubmitted}
             />
-            <span className="text-xs opacity-30">
+            <span className="hidden text-xs opacity-30 sm:inline">
               {showMacKeybinds ? (
                 <KbdGroup>
                   <Kbd>⌘</Kbd>

@@ -125,3 +125,93 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Mobile optimizations for tldraw */
+@media (max-width: 768px) {
+  /* Prevent iOS zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Improve touch targets */
+  .tlui-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Optimize canvas performance on mobile */
+  .tl-canvas {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Reduce motion for better mobile performance */
+  @media (prefers-reduced-motion: reduce) {
+    .tlui-toolbar,
+    .tl-shape {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
+
+  /* Safe area support for notched devices */
+  .tlui-layout {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Larger touch targets */
+  .tlui-button {
+    min-height: 48px;
+    min-width: 48px;
+  }
+
+  /* Prevent text selection on touch */
+  .tl-canvas {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
+/* Performance optimizations */
+.tl-shape {
+  /* Use hardware acceleration */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  /* Optimize for compositing */
+  will-change: transform;
+}
+
+/* Mobile-specific tldraw overrides */
+@media (max-width: 768px) {
+  .tlui-toolbar {
+    /* Mobile toolbar positioning */
+    position: fixed !important;
+    top: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: calc(100% - 16px) !important;
+    justify-content: space-between !important;
+  }
+
+  .tlui-toolbar-content {
+    /* Ensure toolbar items are properly spaced on mobile */
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}

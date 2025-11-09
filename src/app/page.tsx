@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import "@crayonai/react-ui/styles/index.css";
 import "tldraw/tldraw.css";
 import { HotkeysProvider } from "react-hotkeys-hook";
@@ -19,21 +19,42 @@ import { PromptInput } from "./components/PromptInput";
 import { FOCUS_PROMPT_EVENT } from "./events";
 import { shapeUtils } from "./shapeUtils";
 
+// Mobile detection hook
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || "ontouchstart" in window);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 const components: Partial<TLUiComponents> = {
   Toolbar: (props) => {
     const editor = useEditor();
     const isDarkMode = editor.user.getIsDarkMode();
+    const isMobile = useIsMobile();
 
     return (
       <div
         style={{
           position: "fixed",
           top: 8,
-          left: "50%",
-          transform: "translateX(-50%)",
+          left: isMobile ? 8 : "50%",
+          right: isMobile ? 8 : "auto",
+          transform: isMobile ? "none" : "translateX(-50%)",
           display: "flex",
           alignItems: "center",
           gap: 8,
+          justifyContent: isMobile ? "space-between" : "center",
+          width: isMobile ? "calc(100% - 16px)" : "auto",
         }}
       >
         <DefaultToolbar {...props}>
@@ -91,12 +112,40 @@ const Page = () => {
     const handleSystemThemeChange = () => {
       // Only apply system preference if no explicit theme is set (auto mode)
       if (!document.documentElement.hasAttribute("data-theme")) {
-        // The CSS media query will automatically handle the variable updates
-        // We just need to ensure tldraw is notified if needed
+        if (mediaQuery.matches) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
       }
     };
 
     mediaQuery.addEventListener("change", handleSystemThemeChange);
+
+    // Mobile-specific optimizations
+    const isMobile = window.innerWidth <= 768 || "ontouchstart" in window;
+    if (isMobile) {
+      // Prevent zoom on double-tap
+      let lastTouchEnd = 0;
+      document.addEventListener(
+        "touchend",
+        (event) => {
+          const now = Date.now();
+          if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+          }
+          lastTouchEnd = now;
+        },
+        false
+      );
+
+      // Prevent context menu on long press
+      document.addEventListener("contextmenu", (e) => {
+        if (e.target && (e.target as HTMLElement).closest(".tl-canvas")) {
+          e.preventDefault();
+        }
+      });
+    }
 
     return () => {
       mediaQuery.removeEventListener("change", handleSystemThemeChange);
@@ -123,6 +172,14 @@ const Page = () => {
               // Remove data-theme attribute to allow system preference to take effect
               document.documentElement.removeAttribute("data-theme");
             }
+
+            // Mobile-specific optimizations
+            const isMobile =
+              window.innerWidth <= 768 || "ontouchstart" in window;
+            if (isMobile) {
+              // Mobile optimizations are handled via options above
+              console.log("Mobile mode detected, optimizations applied");
+            }
           }}
           onUiEvent={(event, eventData) => {
             if (event === "color-scheme") {
@@ -139,6 +196,10 @@ const Page = () => {
                 document.documentElement.removeAttribute("data-theme");
               }
             }
+          }}
+          options={{
+            // Mobile performance optimizations
+            coarseDragDistanceSquared: 625, // Larger drag threshold for mobile
           }}
           overrides={overrides}
           persistenceKey="c1-canvas"
