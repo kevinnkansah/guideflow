@@ -25,6 +25,7 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [justTranscribed, setJustTranscribed] = useState(false);
+  const [justSubmitted, setJustSubmitted] = useState(false);
   const showMacKeybinds = isMac();
   const inputRef = useRef<HTMLInputElement>(null);
   const isCanvasZeroState = editor.getCurrentPageShapes().length === 0;
@@ -46,6 +47,7 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
 
   const onInputSubmit = async (promptText: string) => {
     setPrompt("");
+    setJustSubmitted(true);
     try {
       await createC1ComponentShape(editor, {
         searchQuery: promptText,
@@ -57,6 +59,8 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
     } catch (error) {
       console.error("Failed to create C1 component shape:", error);
     }
+    // Clear the flag after a short delay to prevent automatic microphone activation
+    setTimeout(() => setJustSubmitted(false), 1000);
   };
 
   const handleTranscriptionComplete = (transcribedText: string) => {
@@ -79,7 +83,7 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
         position: "fixed",
         left: "50%",
         top: isCanvasZeroState ? "50%" : "auto",
-        bottom: isCanvasZeroState ? "auto" : "1rem",
+        bottom: isCanvasZeroState ? "auto" : "3rem",
         transform: isCanvasZeroState
           ? "translate(-50%, -50%)"
           : "translateX(-50%)",
@@ -119,15 +123,8 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
         )}
         onSubmit={(e) => {
           e.preventDefault();
-          console.log(
-            "Form onSubmit called, justTranscribed:",
-            justTranscribed,
-            "prompt:",
-            prompt
-          );
           // Prevent submission if it just happened after transcription
           if (justTranscribed) {
-            console.log("Preventing auto-submission after transcription");
             return;
           }
           if (prompt.trim()) {
@@ -156,22 +153,8 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
             name="prompt-input"
             onBlur={() => setIsFocused(false)}
             onBlurCapture={() => setIsFocused(false)}
-            onChange={(e) => {
-              console.log(
-                "Input onChange called, value:",
-                e.target.value,
-                "justTranscribed:",
-                justTranscribed
-              );
-              setPrompt(e.target.value);
-            }}
-            onFocus={() => {
-              console.log(
-                "Input onFocus called, justTranscribed:",
-                justTranscribed
-              );
-              setIsFocused(true);
-            }}
+            onChange={(e) => setPrompt(e.target.value)}
+            onFocus={() => setIsFocused(true)}
             placeholder="Ask anything..."
             ref={inputRef}
             type="text"
@@ -184,6 +167,7 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
               onRecordingStart={() => setIsRecording(true)}
               onRecordingStop={() => setIsRecording(false)}
               onTranscriptionComplete={handleTranscriptionComplete}
+              justSubmitted={justSubmitted}
             />
             <IconButton
               className="!rounded-full !border-0"
@@ -209,6 +193,7 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
               onRecordingStart={() => setIsRecording(true)}
               onRecordingStop={() => setIsRecording(false)}
               onTranscriptionComplete={handleTranscriptionComplete}
+              justSubmitted={justSubmitted}
             />
             <span className="text-xs opacity-30">
               {showMacKeybinds ? (

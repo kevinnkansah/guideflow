@@ -11,6 +11,7 @@ type MicrophoneButtonProps = {
   disabled?: boolean;
   onRecordingStart?: () => void;
   onRecordingStop?: () => void;
+  justSubmitted?: boolean;
 };
 
 export const MicrophoneButton = ({
@@ -18,6 +19,7 @@ export const MicrophoneButton = ({
   disabled = false,
   onRecordingStart,
   onRecordingStop,
+  justSubmitted = false,
 }: MicrophoneButtonProps) => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -70,11 +72,8 @@ export const MicrophoneButton = ({
         });
 
         if (result.text && result.text.trim()) {
-          console.log("Transcription successful, text:", result.text);
           // Only populate the input field, DO NOT auto-submit
           onTranscriptionComplete(result.text);
-        } else {
-          console.log("Transcription returned empty text");
         }
       } catch (err) {
         const errorMessage =
@@ -108,7 +107,6 @@ export const MicrophoneButton = ({
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
-        console.log("Data available, size:", event.data.size);
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
@@ -117,11 +115,6 @@ export const MicrophoneButton = ({
       mediaRecorder.onstop = () => {
         // Prevent multiple onstop calls
         if (!isRecordingRef.current) return;
-
-        console.log(
-          "MediaRecorder stopped, chunks collected:",
-          audioChunksRef.current.length
-        );
 
         // Calculate recording duration
         const recordingDuration = Date.now() - recordingStartTimeRef.current;
@@ -150,10 +143,6 @@ export const MicrophoneButton = ({
               type: "audio/webm;codecs=opus",
             });
             handleTranscription(audioBlob);
-          } else {
-            console.log(
-              `No audio data to transcribe. Chunks: ${audioChunksRef.current.length}, Duration: ${recordingDuration}ms`
-            );
           }
         }, 100);
       };
@@ -180,46 +169,39 @@ export const MicrophoneButton = ({
   }, [handleTranscription]);
 
   const stopRecording = useCallback(() => {
-    console.log("stopRecording called", {
-      hasMediaRecorder: !!mediaRecorderRef.current,
-      isRecording: isRecordingRef.current,
-      mediaRecorderState: mediaRecorderRef.current?.state,
-    });
-
     if (
       mediaRecorderRef.current &&
       isRecordingRef.current &&
       mediaRecorderRef.current.state !== "inactive"
     ) {
-      console.log("Calling mediaRecorder.stop()");
       mediaRecorderRef.current.stop();
       // Don't set isRecording false here - let onstop handle it
-    } else {
-      console.log("Cannot stop recording - conditions not met");
     }
   }, []);
 
   const handleClick = useCallback(async () => {
-    console.log("Microphone button clicked", {
-      disabled,
-      isSupported,
-      isTranscribing,
-      isRecording: isRecordingRef.current,
-      mediaRecorderState: mediaRecorderRef.current?.state,
-    });
+    // Prevent microphone activation immediately after form submission
+    if (justSubmitted) {
+      return;
+    }
 
     if (disabled || !isSupported || isTranscribing) {
       return;
     }
 
     if (isRecordingRef.current) {
-      console.log("Stopping recording...");
       stopRecording();
     } else {
-      console.log("Starting recording...");
       await startRecording();
     }
-  }, [startRecording, stopRecording, disabled, isSupported, isTranscribing]);
+  }, [
+    startRecording,
+    stopRecording,
+    disabled,
+    isSupported,
+    isTranscribing,
+    justSubmitted,
+  ]);
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
