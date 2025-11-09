@@ -24,6 +24,7 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [prompt, setPrompt] = useState("");
+  const [justTranscribed, setJustTranscribed] = useState(false);
   const showMacKeybinds = isMac();
   const inputRef = useRef<HTMLInputElement>(null);
   const isCanvasZeroState = editor.getCurrentPageShapes().length === 0;
@@ -61,11 +62,14 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
   const handleTranscriptionComplete = (transcribedText: string) => {
     // Only populate the input field, let user decide when to submit
     setPrompt(transcribedText);
+    setJustTranscribed(true);
     // Focus the input so user can easily edit or submit
     if (inputRef.current) {
       inputRef.current.focus();
       setIsFocused(true);
     }
+    // Clear the flag after a short delay to prevent auto-submission
+    setTimeout(() => setJustTranscribed(false), 500);
   };
 
   return (
@@ -115,9 +119,22 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
         )}
         onSubmit={(e) => {
           e.preventDefault();
-          onInputSubmit(prompt);
-          setIsFocused(false);
-          inputRef.current?.blur();
+          console.log(
+            "Form onSubmit called, justTranscribed:",
+            justTranscribed,
+            "prompt:",
+            prompt
+          );
+          // Prevent submission if it just happened after transcription
+          if (justTranscribed) {
+            console.log("Preventing auto-submission after transcription");
+            return;
+          }
+          if (prompt.trim()) {
+            onInputSubmit(prompt);
+            setIsFocused(false);
+            inputRef.current?.blur();
+          }
         }}
       >
         {isRecording ? (
@@ -139,8 +156,22 @@ export const PromptInput = track(({ focusEventName }: PromptInputProps) => {
             name="prompt-input"
             onBlur={() => setIsFocused(false)}
             onBlurCapture={() => setIsFocused(false)}
-            onChange={(e) => setPrompt(e.target.value)}
-            onFocus={() => setIsFocused(true)}
+            onChange={(e) => {
+              console.log(
+                "Input onChange called, value:",
+                e.target.value,
+                "justTranscribed:",
+                justTranscribed
+              );
+              setPrompt(e.target.value);
+            }}
+            onFocus={() => {
+              console.log(
+                "Input onFocus called, justTranscribed:",
+                justTranscribed
+              );
+              setIsFocused(true);
+            }}
             placeholder="Ask anything..."
             ref={inputRef}
             type="text"

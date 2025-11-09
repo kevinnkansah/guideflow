@@ -30,6 +30,7 @@ export const MicrophoneButton = ({
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const isRecordingRef = useRef(false);
+  const recordingStartTimeRef = useRef<number>(0);
 
   // Check browser support on mount
   useEffect(() => {
@@ -68,9 +69,12 @@ export const MicrophoneButton = ({
           temperature: 0,
         });
 
-        if (result.text.trim()) {
+        if (result.text && result.text.trim()) {
+          console.log("Transcription successful, text:", result.text);
           // Only populate the input field, DO NOT auto-submit
           onTranscriptionComplete(result.text);
+        } else {
+          console.log("Transcription returned empty text");
         }
       } catch (err) {
         const errorMessage =
@@ -95,6 +99,7 @@ export const MicrophoneButton = ({
       isRecordingRef.current = true;
       setError(null);
       audioChunksRef.current = [];
+      recordingStartTimeRef.current = Date.now();
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -118,10 +123,9 @@ export const MicrophoneButton = ({
           audioChunksRef.current.length
         );
 
-        // Always create a blob, even if no chunks (some browsers need this)
-        const audioBlob = new Blob(audioChunksRef.current, {
-          type: "audio/webm;codecs=opus",
-        });
+        // Calculate recording duration
+        const recordingDuration = Date.now() - recordingStartTimeRef.current;
+        const MIN_RECORDING_DURATION = 500; // 0.5 seconds minimum
 
         // Stop all tracks
         if (streamRef.current) {
@@ -137,11 +141,19 @@ export const MicrophoneButton = ({
           onRecordingStop?.();
           isRecordingRef.current = false;
 
-          // Only transcribe if we have actual audio data
-          if (audioChunksRef.current.length > 0) {
+          // Only transcribe if we have actual audio data and minimum duration
+          if (
+            audioChunksRef.current.length > 0 &&
+            recordingDuration >= MIN_RECORDING_DURATION
+          ) {
+            const audioBlob = new Blob(audioChunksRef.current, {
+              type: "audio/webm;codecs=opus",
+            });
             handleTranscription(audioBlob);
           } else {
-            console.log("No audio data to transcribe");
+            console.log(
+              `No audio data to transcribe. Chunks: ${audioChunksRef.current.length}, Duration: ${recordingDuration}ms`
+            );
           }
         }, 100);
       };
@@ -231,12 +243,6 @@ export const MicrophoneButton = ({
     <div className="relative flex items-center gap-2">
       <IconButton
         className="!rounded-full !border-0"
-        style={{
-          backgroundColor: "var(--container-fill-hover, #374151) !important",
-          color: "var(--primary-text, #d1d5db) !important",
-          border: "none !important",
-          borderRadius: "50% !important",
-        }}
         disabled={disabled || isTranscribing}
         icon={
           isTranscribing ? (
@@ -249,6 +255,12 @@ export const MicrophoneButton = ({
         }
         onClick={handleClick}
         size="medium"
+        style={{
+          backgroundColor: "var(--container-fill-hover, #374151) !important",
+          color: "var(--primary-text, #d1d5db) !important",
+          border: "none !important",
+          borderRadius: "50% !important",
+        }}
         title={
           isRecording
             ? `Recording... ${formatTime(recordingTime)}`
