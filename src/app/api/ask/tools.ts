@@ -52,7 +52,8 @@ export function getImageSearchTool(
         additionalProperties: false,
       } as JSONSchema,
       function: async ({ altText }: { altText: string }) => {
-        logger.info("Image Search Tool Called", "tools", { altText });
+        const displayName = formatToolName("getImageSrc");
+        logger.info(`${displayName} Tool Called`, "tools", { altText });
 
         // Write thinking state when image search tool is called
         if (writeThinkItem) {
@@ -88,35 +89,40 @@ async function getMCPClient(): Promise<MCPClient> {
   return mcpClient;
 }
 
-// Tool display configurations for better UX
-const toolConfigs: Record<string, ToolDisplayConfig> = {
-  getImageSrc: {
-    friendlyName: "Image Search",
-    description: "Find images from web",
-    category: "search",
-  },
-  // Tavily MCP Tools
-  tavily_search: {
-    friendlyName: "Web Search",
-    description: "Search web for real-time information",
-    category: "search",
-  },
-  tavily_extract: {
-    friendlyName: "Content Extract",
-    description: "Extract content from web pages",
-    category: "utility",
-  },
-  tavily_crawl: {
-    friendlyName: "Web Crawler",
-    description: "Crawl websites for detailed information",
-    category: "search",
-  },
-  tavily_map: {
-    friendlyName: "Map Search",
-    description: "Search for location-based information",
-    category: "search",
-  },
-};
+// Dynamic tool name formatter - works with any tool name format
+function formatToolName(toolName: string): string {
+  if (!toolName || typeof toolName !== "string") {
+    return "Unknown Tool";
+  }
+
+  // Handle any separator pattern dynamically
+  const separators = /[_\-\s]+/;
+
+  // Split on any separator, filter out empty strings
+  const words = toolName.split(separators).filter((word) => word.length > 0);
+
+  // Capitalize each word (handle empty strings safely)
+  return words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+// Dynamic tool display configurations - works with any tool name
+function getToolConfig(
+  toolName: string,
+  description?: string
+): ToolDisplayConfig {
+  const friendlyName = formatToolName(toolName);
+  const firstSentence = description
+    ? `${description.split(".")[0]}.`
+    : "No description available";
+
+  return {
+    friendlyName,
+    description: firstSentence,
+    category: "utility" as const, // Default category - no assumptions
+  };
+}
 
 // Create MCP tool wrappers with enhanced logging and UX
 function createMCPToolWrappers(
@@ -124,36 +130,35 @@ function createMCPToolWrappers(
   writeThinkItem?: ThinkingStateCallback
 ): RunnableToolFunctionWithParse<Record<string, unknown>>[] {
   return mcpTools.map((mcpTool) => {
-    const config = toolConfigs[mcpTool.function.name] || {
-      friendlyName: mcpTool.function.name,
-      description: mcpTool.function.description || "No description available",
-      category: "utility" as const,
-    };
+    // Dynamic tool configuration - works with any tool name
+    const config = getToolConfig(
+      mcpTool.function.name,
+      mcpTool.function.description
+    );
+    const description =
+      mcpTool.function.description || "No description available";
+    const firstSentence = `${description.split(".")[0]}.`;
 
     return {
       type: "function" as const,
       function: {
         name: mcpTool.function.name,
-        description: mcpTool.function.description || "No description available",
+        description: firstSentence,
         parse: JSON.parse,
         parameters: (mcpTool.function.parameters || {}) as JSONSchema,
         function: async (args: Record<string, unknown>) => {
-          logger.info(
-            `${config.friendlyName} Tool Called: ${mcpTool.function.name}`,
-            "tools",
-            { args }
-          );
+          const displayName = formatToolName(mcpTool.function.name);
+          logger.info(`${displayName} Tool Called`, "tools", { args });
 
           // Write thinking state when MCP tool is called
           if (writeThinkItem) {
-            writeThinkItem(
-              `Using ${config.friendlyName}...`,
-              `${config.description}`
-            );
+            writeThinkItem(`Using ${displayName}...`, `${config.description}`);
           }
 
           const mcp = await getMCPClient();
-          const tool_call_id = `mcp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+          const tool_call_id = `mcp_${Date.now()}_${Math.random()
+            .toString(36)
+            .substring(2, 11)}`;
 
           try {
             const result = await mcp.runTool({
@@ -164,17 +169,10 @@ function createMCPToolWrappers(
 
             // Parse result content to return actual data
             const parsedContent = JSON.parse(result.content);
-            logger.info(
-              `${config.friendlyName} Success: ${mcpTool.function.name}`,
-              "tools"
-            );
+            logger.info(`${displayName} Success`, "tools");
             return parsedContent;
           } catch (error) {
-            logger.error(
-              `${config.friendlyName} Failed: ${mcpTool.function.name}`,
-              "tools",
-              error
-            );
+            logger.error(`${displayName} Failed`, "tools", error);
             throw error;
           }
         },
