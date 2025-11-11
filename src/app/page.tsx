@@ -66,6 +66,7 @@ const components: Partial<TLUiComponents> = {
             editor.user.updateUserPreferences({
               colorScheme: isDark ? "light" : "dark",
             });
+            window.location.reload();
           }}
           title="Toggle Dark Mode"
           type="icon"
