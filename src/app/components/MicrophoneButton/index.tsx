@@ -250,6 +250,7 @@ export const MicrophoneButton = ({
               ? "Transcribing..."
               : "Click to record"
         }
+        type="button"
       />
 
       {isRecording && (
